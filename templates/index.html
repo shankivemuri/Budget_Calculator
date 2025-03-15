@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Planner</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        form {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #218838;
+        }
+        .result {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        .warning {
+            color: red;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #28a745;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Budget Planner</h1>
+    
+    <form method="POST">
+        <label for="income">Enter Your Monthly Income ($):</label>
+        <input type="number" step="0.01" id="income" name="income" required>
+
+        <h2>Set Your Budget</h2>
+        {% for category in categories %}
+            <label for="budget_{{ category }}">{{ category }} ($):</label>
+            <input type="number" step="0.01" id="budget_{{ category }}" name="budget_{{ category }}" required>
+        {% endfor %}
+
+        <h2>Enter Your Actual Spending</h2>
+        {% for category in categories %}
+            <label for="spent_{{ category }}">Spent on {{ category }} ($):</label>
+            <input type="number" step="0.01" id="spent_{{ category }}" name="spent_{{ category }}" required>
+        {% endfor %}
+
+        <button type="submit">Calculate</button>
+    </form>
+
+    {% if total_money is not none %}
+        <div class="result">
+            <h2>Budget Report</h2>
+            <p><strong>Total Income:</strong> ${{ total_money }}</p>
+            <p><strong>Total Budgeted:</strong> ${{ total_budget }}</p>
+            <p><strong>Total Spent:</strong> ${{ total_spent }}</p>
+            <p><strong>Money Left:</strong> ${{ money_left }}</p>
+
+            <h2>Category Breakdown</h2>
+            <table>
+                <tr>
+                    <th>Category</th>
+                    <th>Budgeted ($)</th>
+                    <th>Spent ($)</th>
+                    <th>Remaining ($)</th>
+                    <th>Status</th>
+                </tr>
+                {% for category in categories %}
+                <tr>
+                    <td>{{ category }}</td>
+                    <td>${{ budget[category] }}</td>
+                    <td>${{ spent[category] }}</td>
+                    <td>${{ budget[category] - spent[category] }}</td>
+                    <td>
+                        {% if spent[category] <= budget[category] %}
+                            ✅ Within Budget
+                        {% else %}
+                            ❌ <span class="warning">Over Budget</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+
+            <h2>Savings & Spending</h2>
+            <p><strong>Total Savings:</strong> ${{ savings }}</p>
+            <p><strong>Saved:</strong> {{ saved_percent }}%</p>
+            <p><strong>Spent:</strong> {{ spent_percent }}%</p>
+
+            {% if total_spent > total_money %}
+                <p class="warning">⚠ Warning: You spent more than you made! Be careful.</p>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const incomeInput = document.getElementById("income");
+            const budgetInputs = document.querySelectorAll("input[name^='budget_']");
+            const spentInputs = document.querySelectorAll("input[name^='spent_']");
+
+            function updateTotals() {
+                let totalBudget = 0;
+                let totalSpent = 0;
+
+                budgetInputs.forEach(input => totalBudget += parseFloat(input.value) || 0);
+                spentInputs.forEach(input => totalSpent += parseFloat(input.value) || 0);
+
+                const moneyLeft = (parseFloat(incomeInput.value) || 0) - totalSpent;
+
+                console.log("Total Budget:", totalBudget);
+                console.log("Total Spent:", totalSpent);
+                console.log("Money Left:", moneyLeft);
+            }
+
+            incomeInput.addEventListener("input", updateTotals);
+            budgetInputs.forEach(input => input.addEventListener("input", updateTotals));
+            spentInputs.forEach(input => input.addEventListener("input", updateTotals));
+        });
+    </script>
+
+</body>
+</html>
